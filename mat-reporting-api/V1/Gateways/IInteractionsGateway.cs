@@ -8,6 +8,6 @@ namespace MaTReportingAPI.V1.Gateways
     {
         List<Interaction> GetInteractionsByDateRange(string fromDate, string toDate);
 
-        List<ParentInteraction> GetInteractionsAndChildInteractionsByDateRange(string fromDate, string toDate);
+        List<Interaction> GetInteractionsAndChildInteractionsByDateRange(string fromDate, string toDate);
     }
 }

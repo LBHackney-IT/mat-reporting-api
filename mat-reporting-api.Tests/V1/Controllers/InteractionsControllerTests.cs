@@ -5,8 +5,8 @@ using Moq;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Xunit;
+using System.Linq;
 
 namespace MaTReportingAPI.Tests.V1.Controllers
 {
@@ -24,67 +24,10 @@ namespace MaTReportingAPI.Tests.V1.Controllers
 
         private readonly DateTime generatedAt = DateTime.Now;
 
-        private static Interaction interaction = new Interaction()
-        {
-            AddressStreet1 = "Address Street 1",
-            AddressStreet2 = "Address Street 2",
-            AddressStreet3 = "Address Street 3",
-            AddressZIPPostalCode = "E18",
-            Contact = "Contact name",
-            CreatedByEstateOfficer = "Created by estate officer",
-            CreatedOn = "24/12/2019",
-            EnquirySubject = "enquiry subject",
-            EstateOfficerPatch = "estate officer patch",
-            HandledBy = "Handled Officer",
-            HomeCheck = "home check",
-            HouseholdInteraction = "555",
-            Id = "02d0ff4d-2555-e911-a555-002248072xyz",
-            Incident = "incident type",
-            ManagerPatch = "manager patch",
-            Name = "CASE-NAME",
-            NatureofEnquiry = "nature of enquiry",
-            NHOAreaName = "NHO area name",
-            ProcessStage = "555",
-            ProcessType = "555",
-            ReasonForStartingProcess = "reason for processing",
-            Subject = "subject",
-            Transferred = "transferred",
-            UpdatedByEstateOfficer = "updated by",
-            ParentInteractionId = "a4b44f8e-e714-ea11-a811-000d3a86d68d"
-        };
+        private static readonly Interaction interaction = Helpers.InteractionsHelper.GetInteraction();
+        readonly List<Interaction> interactions = new List<Interaction>() { interaction };
 
-        private readonly ParentInteraction parentInteraction = new ParentInteraction()
-        {
-            AddressStreet1 = "Address Street 1",
-            AddressStreet2 = "Address Street 2",
-            AddressStreet3 = "Address Street 3",
-            AddressZIPPostalCode = "E18",
-            Contact = "Contact name",
-            CreatedByEstateOfficer = "Created by estate officer",
-            CreatedOn = "24/12/2019",
-            EnquirySubject = "enquiry subject",
-            EstateOfficerPatch = "estate officer patch",
-            HandledBy = "Handled Officer",
-            HomeCheck = "home check",
-            HouseholdInteraction = "555",
-            Id = "02d0ff4d-2555-e911-a555-002248072xyz",
-            Incident = "incident type",
-            ManagerPatch = "manager patch",
-            Name = "CASE-NAME",
-            NatureofEnquiry = "nature of enquiry",
-            NHOAreaName = "NHO area name",
-            ProcessStage = "555",
-            ProcessType = "555",
-            ReasonForStartingProcess = "reason for processing",
-            Subject = "subject",
-            Transferred = "transferred",
-            UpdatedByEstateOfficer = "updated by",
-            ParentInteractionId = null,
-            ChildInteractions = new List<Interaction>() { interaction }
-        };
-
-        private List<Interaction> interactions = new List<Interaction>();
-        private List<ParentInteraction> interactionsAndChildInteraction = new List<ParentInteraction>();
+        //private List<Interaction> interactionsAndChildInteraction = new List<Interaction>();
 
         public InteractionsControllerTests()
         {
@@ -94,9 +37,6 @@ namespace MaTReportingAPI.Tests.V1.Controllers
             interactionsController = new InteractionsController(
                 mockListInteractionsUseCase.Object,
                 mockListInteractionsAndChildInteractionsUseCase.Object);
-
-            interactions.Add(interaction);
-            interactionsAndChildInteraction.Add(parentInteraction);
         }
 
         [Fact]
@@ -125,38 +65,11 @@ namespace MaTReportingAPI.Tests.V1.Controllers
                         { "generatedAt", generatedAt },
                         { "interactions",
                             new [] {
-                                new Dictionary<string, object>
-                                {
-                                    {"id","02d0ff4d-2555-e911-a555-002248072xyz"},
-                                    {"parentInteractionId", "a4b44f8e-e714-ea11-a811-000d3a86d68d" },
-                                    {"name","CASE-NAME"},
-                                    {"createdOn","24/12/2019"},
-                                    {"contact","Contact name"},
-                                    {"natureofEnquiry","nature of enquiry"},
-                                    {"createdByEstateOfficer","Created by estate officer"},
-                                    {"enquirySubject","enquiry subject"},
-                                    {"estateOfficerPatch","estate officer patch"},
-                                    {"handledBy","Handled Officer"},
-                                    {"householdInteraction","555"},
-                                    {"incident","incident type"},
-                                    {"managerPatch","manager patch"},
-                                    {"nhoAreaName","NHO area name"},
-                                    {"processStage","555"},
-                                    {"processType","555"},
-                                    {"reasonForStartingProcess","reason for processing"},
-                                    {"subject","subject"},
-                                    {"transferred","transferred"},
-                                    {"updatedByEstateOfficer","updated by"},
-                                    {"addressStreet1","Address Street 1"},
-                                    {"addressStreet2","Address Street 2"},
-                                    {"addressStreet3","Address Street 3"},
-                                    {"addressZIPPostalCode","E18"},
-                                    {"homeCheck","home check"}
-                                }
+                                Helpers.InteractionsHelper.GetInteractionsAsDictionaryObject()
                             }
                         }
                    }
-               ), json);
+               ), json);;
         }
 
         [Fact]
@@ -166,7 +79,7 @@ namespace MaTReportingAPI.Tests.V1.Controllers
                 .Returns(new ListInteractionsAndChildInteractionsResponse(
                     listInteractionsAndChildInteractionsRequest,
                     generatedAt,
-                    interactionsAndChildInteraction));
+                    interactions));
 
             var response = interactionsController.GetInteractionsAndChildInteractionsByDateRange(listInteractionsAndChildInteractionsRequest);
 
@@ -189,65 +102,7 @@ namespace MaTReportingAPI.Tests.V1.Controllers
                         { "generatedAt", generatedAt },
                         { "interactions",
                             new [] {
-                                new Dictionary<string, object>
-                                {
-                                    {"childInteractions", new [] {
-                                        new Dictionary<string, object>
-                                            {
-                                                {"id","02d0ff4d-2555-e911-a555-002248072xyz"},
-                                                {"parentInteractionId", "a4b44f8e-e714-ea11-a811-000d3a86d68d" },
-                                                {"name","CASE-NAME"},
-                                                {"createdOn","24/12/2019"},
-                                                {"contact","Contact name"},
-                                                {"natureofEnquiry","nature of enquiry"},
-                                                {"createdByEstateOfficer","Created by estate officer"},
-                                                {"enquirySubject","enquiry subject"},
-                                                {"estateOfficerPatch","estate officer patch"},
-                                                {"handledBy","Handled Officer"},
-                                                {"householdInteraction","555"},
-                                                {"incident","incident type"},
-                                                {"managerPatch","manager patch"},
-                                                {"nhoAreaName","NHO area name"},
-                                                {"processStage","555"},
-                                                {"processType","555"},
-                                                {"reasonForStartingProcess","reason for processing"},
-                                                {"subject","subject"},
-                                                {"transferred","transferred"},
-                                                {"updatedByEstateOfficer","updated by"},
-                                                {"addressStreet1","Address Street 1"},
-                                                {"addressStreet2","Address Street 2"},
-                                                {"addressStreet3","Address Street 3"},
-                                                {"addressZIPPostalCode","E18"},
-                                                {"homeCheck","home check"}
-                                            }
-                                        }
-                                    },
-                                    {"id","02d0ff4d-2555-e911-a555-002248072xyz"},
-                                    {"parentInteractionId", null },
-                                    {"name","CASE-NAME"},
-                                    {"createdOn","24/12/2019"},
-                                    {"contact","Contact name"},
-                                    {"natureofEnquiry","nature of enquiry"},
-                                    {"createdByEstateOfficer","Created by estate officer"},
-                                    {"enquirySubject","enquiry subject"},
-                                    {"estateOfficerPatch","estate officer patch"},
-                                    {"handledBy","Handled Officer"},
-                                    {"householdInteraction","555"},
-                                    {"incident","incident type"},
-                                    {"managerPatch","manager patch"},
-                                    {"nhoAreaName","NHO area name"},
-                                    {"processStage","555"},
-                                    {"processType","555"},
-                                    {"reasonForStartingProcess","reason for processing"},
-                                    {"subject","subject"},
-                                    {"transferred","transferred"},
-                                    {"updatedByEstateOfficer","updated by"},
-                                    {"addressStreet1","Address Street 1"},
-                                    {"addressStreet2","Address Street 2"},
-                                    {"addressStreet3","Address Street 3"},
-                                    {"addressZIPPostalCode","E18"},
-                                    {"homeCheck","home check"}
-                                }
+                                Helpers.InteractionsHelper.GetInteractionsAsDictionaryObject()
                             }
                         }
                    }
