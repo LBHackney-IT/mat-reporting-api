@@ -15,33 +15,7 @@ namespace MaTReportingAPI.Tests.V1.UseCase
         private readonly ListInteractionsUseCase _intercationsUseCase;
         private readonly Mock<IInteractionsGateway> _interactionsGateway;
 
-        private readonly Interaction intercation = new Interaction()
-        {
-            AddressStreet1 = "Address Street 1",
-            AddressStreet2 = "Address Street 2",
-            AddressStreet3 = "Address Street 3",
-            AddressZIPPostalCode = "E18",
-            Contact = "Contact name",
-            CreatedByEstateOfficer = "Created by estate officer",
-            CreatedOn = "24/12/2019",
-            EnquirySubject = "enquiry subject",
-            EstateOfficerPatch = "estate officer patch",
-            HandledBy = "Handled Officer",
-            HomeCheck = "home check",
-            HouseholdInteraction = "555",
-            Id = "02d0ff4d-2555-e911-a555-002248072xyz",
-            Incident = "incident type",
-            ManagerPatch = "manager patch",
-            Name = "CASE-NAME",
-            NatureofEnquiry = "nature of enquiry",
-            NHOAreaName = "NHO area name",
-            ProcessStage = "555",
-            ProcessType = "555",
-            ReasonForStartingProcess = "reason for processing",
-            Subject = "subject",
-            Transferred = "transferred",
-            UpdatedByEstateOfficer = "updated by"
-        };
+        private readonly Interaction intercation = Helpers.InteractionsHelper.GetInteraction();
 
         public ListInteractionsUseCaseTests()
         {

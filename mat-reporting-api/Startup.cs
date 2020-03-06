@@ -19,6 +19,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 using FluentValidation.AspNetCore;
 using FluentValidation;
 using MaTReportingAPI.V1.Validators;
+using System.Net.Http.Headers;
 
 namespace MaTReportingAPI
 {
@@ -111,11 +112,35 @@ namespace MaTReportingAPI
             RegisterGateWays(services);
             RegisterUseCases(services);
 
-            
+            //use HttpClientFactory for more efficient http client management
+
+            //client for accessing CRM token service
+            services.AddHttpClient<ICRMTokenGateway, CRMTokenGateway>(client =>
+            {
+                client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("GetCRM365AccessTokenURL"));
+            });
+
+            //client for generic CRM access
+            services.AddHttpClient<ICRMGateway, CRMGateway>(client =>
+            {
+                client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("CRMAPIBaseURL"));
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Add("OData-MaxVersion", "4.0");
+                client.DefaultRequestHeaders.Add("OData-Version", "4.0");
+                client.DefaultRequestHeaders.Add("Prefer", "odata.include-annotations=\"OData.Community.Display.V1.FormattedValue\"");
+            });
+
+            //client for accessing MaT process API
+            services.AddHttpClient<IMaTProcessAPIGateway, MaTProcessAPIGateway>(client =>
+            {
+                client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("MaTProcessAPIURL"));
+            });
         }
 
         private static void RegisterGateWays(IServiceCollection services)
         {
+            services.AddSingleton<ICRMTokenGateway, CRMTokenGateway>();
+            services.AddSingleton<ICRMGateway, CRMGateway>();
             services.AddSingleton<IETRAMeetingsGateway, ETRAMeetingsGateway>();
             services.AddSingleton<IInteractionsGateway, InteractionsGateway>();
         }

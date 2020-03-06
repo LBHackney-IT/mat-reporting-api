@@ -182,10 +182,10 @@ namespace MaTReportingAPI.Tests.V1.Domain
         }
 
         [Fact]
-        public void ParentInteractionsHaveListOfChildInteractions()
+        public void InteractionsHaveListOfChildInteractions()
         {
-            ParentInteraction parentInteraction = new ParentInteraction();
-            Assert.Empty(parentInteraction.ChildInteractions);
+            Interaction interaction = new Interaction();
+            Assert.Empty(interaction.ChildInteractions);
         }
     }
 }
