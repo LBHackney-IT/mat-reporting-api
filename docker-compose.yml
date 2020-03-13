@@ -4,8 +4,8 @@ services:
   mat-reporting-api:
     image: mat-reporting-api
     build:
-      context: mat-reporting-api/
-      dockerfile: ./Dockerfile
+      context: .
+      dockerfile: mat-reporting-api/Dockerfile
     ports:
       - 3000:3000
   
