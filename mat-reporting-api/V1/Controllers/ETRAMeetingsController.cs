@@ -1,8 +1,9 @@
 using MaTReportingAPI.V1.Boundary;
-using MaTReportingAPI.V1.Builders;
+using MaTReportingAPI.V1.CustomExceptions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace MaTReportingAPI.Controllers.V1
 {
@@ -22,20 +23,30 @@ namespace MaTReportingAPI.Controllers.V1
         /// <summary>
         /// Returns a list ETRA meetings and number of actions taken
         /// </summary>
-        /// <param name="FromDate"></param>
-        /// <param name="ToDate"></param>
+        /// <param name="request"></param>
         /// <returns>A list of ETRA meetings</returns>
         [HttpGet]
-        public  JsonResult GetETRAMeetingsByDateRange([FromQuery] ListETRAMeetingsRequest request)
+        public  IActionResult GetETRAMeetingsByDateRange([FromQuery] ListETRAMeetingsRequest request)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return ResponseBuilder.ErrorFromList(400, ModelState.Values.SelectMany(x => x?.Errors?.Select(y => y?.ErrorMessage)));
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState.Values.SelectMany(x => x?.Errors?.Select(y => y?.ErrorMessage)));
+                }
+
+                var meetings = _listETRAMeetings.Execute(request);
+
+                return Ok(meetings);
             }
-
-            var meetings = _listETRAMeetings.Execute(request);
-
-            return ResponseBuilder.Ok(meetings);
+            catch (Exception ex) when (ex is MaTReportingApiBaseException)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"{ex.GetType().Name.ToString()} : {ex.Message}");
+            }
+            catch
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
     }
 }

@@ -1,3 +1,4 @@
+using MaTReportingAPI.V1.CustomExceptions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
@@ -16,13 +17,20 @@ namespace MaTReportingAPI.V1.Gateways
         //TODO: throw token exception
         public string GetCRMAccessToken()
         {
-            var tokenResponseMessage = _httpClient.GetAsync("").Result;
+            try
+            {
+                var tokenResponseMessage = _httpClient.GetAsync("").Result;
 
-            string r = tokenResponseMessage.Content.ReadAsStringAsync().Result;
-            var tokenJsonResponse = JsonConvert.DeserializeObject<JObject>(r);
-            var accessToken = tokenJsonResponse["result"].ToString();
+                string r = tokenResponseMessage.Content.ReadAsStringAsync().Result;
+                var tokenJsonResponse = JsonConvert.DeserializeObject<JObject>(r);
+                var accessToken = tokenJsonResponse["result"].ToString();
 
-            return accessToken;
+                return accessToken;
+            }
+            catch
+            {
+                throw new CRMTokenException("Unable to retrieve CRM access token");
+            }
         }
     }
 }

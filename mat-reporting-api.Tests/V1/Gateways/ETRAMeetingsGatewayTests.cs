@@ -64,7 +64,6 @@ namespace MaTReportingAPI.Tests.V1.Gateways
             string expectedMeetingName = "ETRA meeting";
             int expectedNumberOfActions = 1;
 
-
             string expectedCRMGatewayResponseContent =
                 $@"{{""value"": [{{""hackney_name"": ""{expectedMeetingName}"",""NoOfActions"": ""{expectedNumberOfActions}""}}]}}";
 
