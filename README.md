@@ -1,15 +1,11 @@
-# LBH Base API
+# MaT Repoerting API
 
-Base API is a boilerplate code for being reused for new APIs for LBH
+API for providing MaT related data
 
 ## Stack
 
 - .NET Core as a web framework.
-- nUnit as a test framework.
-
-## Dependencies
-
-- Universal Housing Simulator
+- xUnit as a test framework.
 
 ## Contributing
 
@@ -66,17 +62,8 @@ $ make test
 
 ### Active Maintainers
 
-- **Selwyn Preston**, Lead Developer at London Borough of Hackney (selwyn.preston@hackney.gov.uk)
-- **Mirela Georgieva**, Developer at London Borough of Hackney (mirela.georgieva@hackney.gov.uk)
-- **Miguel Saitz**, Junior Developer at London Borough of Hackney (miguel.saitz@hackney.gov.uk)
-
-### Other Contacts
-
-- **Rashmi Shetty**, Development Manager at London Borough of Hackney (rashmi.shetty@hackney.gov.uk)
-- **Cormac Brady**, Developer at [Made Tech][made-tech] (cormac@madetech.com)
+- **Tuomo Karki**, Developer at London Borough of Hackney (tuomo.karki@hackney.gov.uk)
 
 
 [docker-download]: https://www.docker.com/products/docker-desktop
-[universal-housing-simulator]: https://github.com/LBHackney-IT/lbh-universal-housing-simulator
-[made-tech]: https://madetech.com/
 [AWS-CLI]: https://aws.amazon.com/cli/
