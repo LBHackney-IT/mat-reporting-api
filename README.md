@@ -1,4 +1,4 @@
-# MaT Repoerting API
+# MaT Reporting API
 
 API for providing MaT related data
 
