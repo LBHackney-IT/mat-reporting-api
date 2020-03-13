@@ -1,7 +1,6 @@
 using MaTReportingAPI.V1.Domain;
 using MaTReportingAPI.V1.Factories;
 using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -82,7 +81,6 @@ namespace MaTReportingAPI.V1.Gateways
             return interactions;
         }
 
-        //TODO: add child interactions
         public List<Interaction> GetInteractionsAndChildInteractionsByDateRange(string fromDate, string toDate)
         {
             //get all parent interactions for the selected period

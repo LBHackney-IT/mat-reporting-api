@@ -1,12 +1,14 @@
 using MaTReportingAPI.Controllers.V1;
 using MaTReportingAPI.V1.Boundary;
+using MaTReportingAPI.V1.CustomExceptions;
 using MaTReportingAPI.V1.Domain;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using Xunit;
-using System.Linq;
 
 namespace MaTReportingAPI.Tests.V1.Controllers
 {
@@ -27,8 +29,6 @@ namespace MaTReportingAPI.Tests.V1.Controllers
         private static readonly Interaction interaction = Helpers.InteractionsHelper.GetInteraction();
         readonly List<Interaction> interactions = new List<Interaction>() { interaction };
 
-        //private List<Interaction> interactionsAndChildInteraction = new List<Interaction>();
-
         public InteractionsControllerTests()
         {
             mockListInteractionsUseCase = new Mock<IListInteractions>();
@@ -46,9 +46,10 @@ namespace MaTReportingAPI.Tests.V1.Controllers
                 .Returns(new ListInteractionsResponse(listInteractionsRequest, generatedAt, interactions));
 
             var response = interactionsController.GetInteractionsByDateRange(listInteractionsRequest);
-            var json = JsonConvert.SerializeObject(response.Value);
-           
-            Assert.Equal(200, response.StatusCode);
+            var result = (ObjectResult)response;
+            var json = JsonConvert.SerializeObject(result.Value);
+
+            Assert.Equal(200, result.StatusCode);
 
             Assert.Equal(
                JsonConvert.SerializeObject(
@@ -83,9 +84,11 @@ namespace MaTReportingAPI.Tests.V1.Controllers
 
             var response = interactionsController.GetInteractionsAndChildInteractionsByDateRange(listInteractionsAndChildInteractionsRequest);
 
-            var json = JsonConvert.SerializeObject(response.Value);
+            var result = (ObjectResult)response;
 
-            Assert.Equal(200, response.StatusCode);
+            var json = JsonConvert.SerializeObject(result.Value);
+
+            Assert.Equal(200, result.StatusCode);
 
             Assert.Equal(
                JsonConvert.SerializeObject(
@@ -107,6 +110,65 @@ namespace MaTReportingAPI.Tests.V1.Controllers
                         }
                    }
                ), json);
+        }
+
+        [Fact]
+        public void Given_UseCase_throws_an_exception_then_controller_returns_status_code_500()
+        {
+            //Arrange
+            mockListInteractionsAndChildInteractionsUseCase
+                .Setup(x => x.Execute(It.IsAny<ListInteractionsAndChildInteractionsRequest>())).Throws<Exception>();
+
+            //Act
+            var response = interactionsController.GetInteractionsAndChildInteractionsByDateRange(null);
+
+            var result = (StatusCodeResult)response;
+
+            //Assert
+            Assert.Equal(result.StatusCode, StatusCodes.Status500InternalServerError);
+
+        }
+
+        [Fact]
+        public void Given_that_MaTProcessApiException_exception_is_thrown_then_controller_returns_status_code_500()
+        {
+            //Arrange
+            mockListInteractionsAndChildInteractionsUseCase.Setup(x => x.Execute(It.IsAny<ListInteractionsAndChildInteractionsRequest>())).Throws<MaTProcessApiException>();
+
+            //Act
+            var response = interactionsController.GetInteractionsAndChildInteractionsByDateRange(null);
+            var result = (ObjectResult)response;
+
+            //Assert
+            Assert.Equal(500, result.StatusCode);
+        }
+
+        [Fact]
+        public void Given_that_CRMTokenException_exception_is_thrown_then_controller_returns_status_code_500()
+        {
+            //Arrange
+            mockListInteractionsAndChildInteractionsUseCase.Setup(x => x.Execute(It.IsAny<ListInteractionsAndChildInteractionsRequest>())).Throws<CRMTokenException>();
+
+            //Act
+            var response = interactionsController.GetInteractionsAndChildInteractionsByDateRange(null);
+            var result = (ObjectResult)response;
+
+            //Assert
+            Assert.Equal(500, result.StatusCode);
+        }
+
+        [Fact]
+        public void Given_that_CRMException_exception_is_thrown_then_controller_returns_status_code_500()
+        {
+            //Arrange
+            mockListInteractionsAndChildInteractionsUseCase.Setup(x => x.Execute(It.IsAny<ListInteractionsAndChildInteractionsRequest>())).Throws<CRMException>();
+
+            //Act
+            var response = interactionsController.GetInteractionsAndChildInteractionsByDateRange(null);
+            var result = (ObjectResult)response;
+
+            //Assert
+            Assert.Equal(500, result.StatusCode);
         }
     }
 }

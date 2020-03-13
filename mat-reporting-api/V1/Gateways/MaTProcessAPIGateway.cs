@@ -1,3 +1,4 @@
+using MaTReportingAPI.V1.CustomExceptions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
@@ -14,14 +15,20 @@ namespace MaTReportingAPI.V1.Gateways
             _httpClient = httpClient;
         }
 
-        //TODO: make async
         public JObject GetHomeCheckAnswersByInteractionIDs(List<string> interactionIDs)
         {
-            var homeCheckResponse = _httpClient.PostAsJsonAsync("", interactionIDs).Result;
+            try
+            {
+                var homeCheckResponse = _httpClient.PostAsJsonAsync("", interactionIDs).Result;
 
-            string homeCheckAnswers = homeCheckResponse.Content.ReadAsStringAsync().Result;
+                string homeCheckAnswers = homeCheckResponse.Content.ReadAsStringAsync().Result;
 
-            return JsonConvert.DeserializeObject<JObject>(homeCheckAnswers);
+                return JsonConvert.DeserializeObject<JObject>(homeCheckAnswers);
+            }
+            catch
+            {
+                throw new MaTProcessApiException("Unable to get home check details from MaT Process API");
+            }
         }
     }
 }

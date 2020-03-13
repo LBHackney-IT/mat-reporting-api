@@ -1,3 +1,4 @@
+using MaTReportingAPI.V1.CustomExceptions;
 using Newtonsoft.Json;
 using System.Net.Http;
 
@@ -14,25 +15,30 @@ namespace MaTReportingAPI.V1.Gateways
             _httpClient = httpClient;
         }
 
-        //TODO: error handling, pass api version as param
         public dynamic GetEntitiesByFetchXMLQuery(string entityType, string query)
         {
             //same HttpClient from http client factory will be used so check if the Authorization header has been set already
+            //will throw custom exception on failure, let it bubble up to controller
             if (!_httpClient.DefaultRequestHeaders.Contains("Authorization"))
             {
                 string accessToken = _CRMTokenGateway.GetCRMAccessToken();
                 _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken);
             }
 
-            string queryURL = $"/api/data/v8.2/{entityType}?fetchXml={query}";
+            try
+            {
+                string queryURL = $"/api/data/v8.2/{entityType}?fetchXml={query}";
 
-            HttpResponseMessage httpResponseMessage = _httpClient.GetAsync(queryURL).Result;
+                HttpResponseMessage httpResponseMessage = _httpClient.GetAsync(queryURL).Result;
 
-            //TODO: add entity error handling
-            string result = httpResponseMessage.Content.ReadAsStringAsync().Result;
+                string result = httpResponseMessage.Content.ReadAsStringAsync().Result;
 
-            //TODO: null result
-            return JsonConvert.DeserializeObject<dynamic>(result).value;
+                return JsonConvert.DeserializeObject<dynamic>(result).value;
+            }
+            catch
+            {
+                throw new CRMException("Unable to fetch data from CRM");
+            }
         }
     }
 }
