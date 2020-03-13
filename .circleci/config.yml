@@ -1,6 +1,5 @@
 version: 2.1
 
-
 jobs:
   check:
     docker:
@@ -9,10 +8,10 @@ jobs:
       - checkout
       - run:
           name: build
-          command: docker-compose build base-api-test
+          command: docker-compose build mat-reporting-api-test
       - run:
           name: Run tests
-          command: docker-compose up base-api-test
+          command: docker-compose up mat-reporting-api-test
 
 workflows:
   build:
