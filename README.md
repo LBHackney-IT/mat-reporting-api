@@ -58,12 +58,6 @@ To run tests:
 $ make test
 ```
 
-## Contacts
-
-### Active Maintainers
-
-- **Tuomo Karki**, Developer at London Borough of Hackney (tuomo.karki@hackney.gov.uk)
-
 
 [docker-download]: https://www.docker.com/products/docker-desktop
 [AWS-CLI]: https://aws.amazon.com/cli/
