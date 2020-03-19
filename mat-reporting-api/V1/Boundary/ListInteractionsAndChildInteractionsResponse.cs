@@ -8,12 +8,12 @@ namespace MaTReportingAPI.V1.Boundary
     {
         public ListInteractionsAndChildInteractionsRequest Request { get; set; }
         public DateTime GeneratedAt { get; set; }
-        public List<ParentInteraction> Interactions { get; set; }
+        public List<Interaction> Interactions { get; set; }
 
         public ListInteractionsAndChildInteractionsResponse(
             ListInteractionsAndChildInteractionsRequest request,
             DateTime generatedAt,
-            List<ParentInteraction> interactions)
+            List<Interaction> interactions)
         {
             Request = request;
             GeneratedAt = generatedAt;

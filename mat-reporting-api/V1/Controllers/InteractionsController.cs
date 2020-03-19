@@ -1,8 +1,9 @@
 using MaTReportingAPI.V1.Boundary;
-using MaTReportingAPI.V1.Builders;
+using MaTReportingAPI.V1.CustomExceptions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace MaTReportingAPI.Controllers.V1
 {
@@ -22,35 +23,58 @@ namespace MaTReportingAPI.Controllers.V1
         /// <summary>
         /// Returns tenancy visit interactions, including home check flag
         /// </summary>
-        /// <param name="fromDate"></param>
-        /// <param name="toDate"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("api/V1/Interactions")]
-        public JsonResult GetInteractionsByDateRange([FromQuery] ListInteractionsRequest request)
+        public IActionResult GetInteractionsByDateRange([FromQuery] ListInteractionsRequest request)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return ResponseBuilder.ErrorFromList(400, ModelState.Values.SelectMany(x => x?.Errors?.Select(y => y?.ErrorMessage)));
-            }
-                
-            var interactions = _listIntercations.Execute(request);
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState.Values.SelectMany(x => x?.Errors?.Select(y => y?.ErrorMessage)));
+                }
 
-            return ResponseBuilder.Ok(interactions);
+                var interactions = _listIntercations.Execute(request);
+
+                return Ok(interactions);
+            }
+            //thrown when any of the gateways throws custom exception, bubbles up all the way here
+            catch(Exception ex) when (ex is MaTReportingApiBaseException)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"{ex.GetType().Name.ToString()} : {ex.Message}");
+            }
+            catch
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
 
         [HttpGet]
         [Route("api/V1/Interactions/GetInteractionsAndChildInteractionsByDateRange")]
-        public JsonResult GetInteractionsAndChildInteractionsByDateRange([FromQuery] ListInteractionsAndChildInteractionsRequest request)
+        public IActionResult GetInteractionsAndChildInteractionsByDateRange([FromQuery] ListInteractionsAndChildInteractionsRequest request)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return ResponseBuilder.ErrorFromList(400, ModelState.Values.SelectMany(x => x?.Errors?.Select(y => y?.ErrorMessage)));
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState.Values.SelectMany(x => x?.Errors?.Select(y => y?.ErrorMessage)));
+                }
+
+                var interactionsAndChildInteractions = _listInteractionsAndChildInteractions.Execute(request);
+
+                return Ok(interactionsAndChildInteractions);
             }
-
-            var interactionsAndChildInteractions = _listInteractionsAndChildInteractions.Execute(request);
-
-            return ResponseBuilder.Ok(interactionsAndChildInteractions);
+            //thrown when any of the gateways throws custom exception, bubbles up all the way here
+            catch (Exception ex) when (ex is MaTReportingApiBaseException)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"{ex.GetType().Name.ToString()} : {ex.Message}");
+            }
+            catch
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
     }
 }

@@ -1,37 +1,24 @@
 using MaTReportingAPI.V1.Domain;
-using MaTReportingAPI.V1.Models;
-using Newtonsoft.Json;
+using MaTReportingAPI.V1.Factories;
 using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
 
 namespace MaTReportingAPI.V1.Gateways
 {
     public class InteractionsGateway : IInteractionsGateway
     {
-        private static readonly string GetCRM365AccessTokenURL = Environment.GetEnvironmentVariable("GetCRM365AccessTokenURL");
-        private static readonly string MaTProcessAPIURL = Environment.GetEnvironmentVariable("MaTProcessAPIURL");
-        private static readonly string CRMAPIBaseURL = Environment.GetEnvironmentVariable("CRMAPIBaseURL");
+        private readonly ICRMGateway _CRMGateway;
+        private readonly IMaTProcessAPIGateway _MaTProcessAPIGateway;
+
+        public InteractionsGateway(ICRMGateway CRMGateway, IMaTProcessAPIGateway MaTProcessAPI)
+        {
+            _CRMGateway = CRMGateway;
+            _MaTProcessAPIGateway = MaTProcessAPI;
+        }
 
         public List<Interaction> GetInteractionsByDateRange(string fromDate, string toDate)
         {
-            HttpClient _client = new HttpClient();
-
-            HttpResponseMessage tokenResponse = _client.GetAsync(GetCRM365AccessTokenURL).Result;
-            string r = tokenResponse.Content.ReadAsStringAsync().Result;
-            var tokenJsonResponse = JsonConvert.DeserializeObject<JObject>(r);
-            var accessToken = tokenJsonResponse["result"].ToString();
-            _client.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken);
-
-            _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _client.DefaultRequestHeaders.Add("OData-MaxVersion", "4.0");
-            _client.DefaultRequestHeaders.Add("OData-Version", "4.0");
-            _client.DefaultRequestHeaders.Add("Prefer", "odata.include-annotations=\"OData.Community.Display.V1.FormattedValue\"");
-
             string interactionsQuery =
             $@"
             <fetch distinct='false' mapping='logical' output-format='xml-platform' version='1.0'>
@@ -72,89 +59,30 @@ namespace MaTReportingAPI.V1.Gateways
                 </fetch>
             ";
 
-            string url = $"{CRMAPIBaseURL}/hackney_tenancymanagementinteractionses?fetchXml={interactionsQuery}";
+            dynamic interactionsResponse = _CRMGateway.GetEntitiesByFetchXMLQuery("hackney_tenancymanagementinteractionses", interactionsQuery);
 
-            HttpResponseMessage response = _client.GetAsync(url).Result;
-            string interactionsResult = response.Content.ReadAsStringAsync().Result;
-            var interactionsValue = JsonConvert.DeserializeObject<JObject>(interactionsResult);
-            List<JToken> interactionsResponse = interactionsValue["value"].ToList();
             List<Interaction> interactions = new List<Interaction>();
 
             foreach (JToken m in interactionsResponse)
             {
-                var id = m["hackney_tenancymanagementinteractionsid"]; 
-
-                Interaction interaction = new Interaction()
-                {
-                    Id = m["hackney_tenancymanagementinteractionsid"]?.ToString(),
-                    Name = m["hackney_name"]?.ToString(),
-                    CreatedOn = m["createdon"]?.ToString(),
-                    Contact = m["_hackney_contactid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    NatureofEnquiry = m["hackney_natureofenquiry@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    CreatedByEstateOfficer = m["_hackney_estateofficer_createdbyid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    EnquirySubject = m["hackney_enquirysubject@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    EstateOfficerPatch = m["_hackney_estateofficerpatchid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    HandledBy = m["hackney_handleby@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    HouseholdInteraction = m["_hackney_household_interactionid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    Incident = m["_hackney_incidentid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    ManagerPatch = m["_hackney_managerpropertypatchid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    NHOAreaName = m["hackney_areaname@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    ProcessStage = m["hackney_process_stage@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    ProcessType = m["hackney_processtype@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    ReasonForStartingProcess = m["hackney_reasonforstartingprocess@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    Subject = m["_hackney_subjectid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    Transferred = m["hackney_transferred@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    UpdatedByEstateOfficer = m["_hackney_estateofficer_updatedbyid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                    AddressStreet1 = m["contact1_x002e_address1_line1"]?.ToString(),
-                    AddressStreet2 = m["contact1_x002e_address1_line2"]?.ToString(),
-                    AddressStreet3 = m["contact1_x002e_address1_line3"]?.ToString(),
-                    AddressZIPPostalCode = m["contact1_x002e_address1_postalcode"]?.ToString()
-                };
-
-                interactions.Add(interaction);
+                interactions.Add(CRMEntityFactory.CreateInteractionObject(m));
             }
 
             List<string> interactionIDs = interactions.Select(x => x.Id).ToList();
 
-            HttpResponseMessage homeCheckResponse;
+            var homeChecks = _MaTProcessAPIGateway.GetHomeCheckAnswersByInteractionIDs(interactionIDs);
 
-            try
-            {
-                homeCheckResponse = _client.PostAsJsonAsync(MaTProcessAPIURL, interactionIDs).Result;
-            }
-            catch
-            {
-                throw new MaTProcessAPIConnectionException("Unable to connect to MaT Process API");
-            }
-
-            string homeCheckAnswers = homeCheckResponse.Content.ReadAsStringAsync().Result;
-
-            var homeChecks = JsonConvert.DeserializeObject<JObject>(homeCheckAnswers);
-
-            foreach(var homeCheck in homeChecks)
+            foreach(KeyValuePair<string, JToken> homeCheck in homeChecks)
             {
                 Interaction interaction = interactions.FirstOrDefault(x => x.Id == homeCheck.Key);
-                interaction.HomeCheck = homeCheck.Value?.ToString();
+                if(interaction != null) interaction.HomeCheck = homeCheck.Value?.ToString();
             }
 
             return interactions;
         }
 
-        public List<ParentInteraction> GetInteractionsAndChildInteractionsByDateRange(string fromDate, string toDate)
+        public List<Interaction> GetInteractionsAndChildInteractionsByDateRange(string fromDate, string toDate)
         {
-            HttpClient _client = new HttpClient();
-
-            HttpResponseMessage tokenResponse = _client.GetAsync(GetCRM365AccessTokenURL).Result;
-            string r = tokenResponse.Content.ReadAsStringAsync().Result;
-            var tokenJsonResponse = JsonConvert.DeserializeObject<JObject>(r);
-            var accessToken = tokenJsonResponse["result"].ToString();
-            _client.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken);
-
-            _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            _client.DefaultRequestHeaders.Add("OData-MaxVersion", "4.0");
-            _client.DefaultRequestHeaders.Add("OData-Version", "4.0");
-            _client.DefaultRequestHeaders.Add("Prefer", "odata.include-annotations=\"OData.Community.Display.V1.FormattedValue\"");
-
             //get all parent interactions for the selected period
             string parentInteractionsQuery =
             $@"
@@ -197,19 +125,13 @@ namespace MaTReportingAPI.V1.Gateways
                 </fetch>
             ";
 
-            string url = $"{CRMAPIBaseURL}/hackney_tenancymanagementinteractionses?fetchXml={parentInteractionsQuery}";
+            dynamic interactionsResponse = _CRMGateway.GetEntitiesByFetchXMLQuery("hackney_tenancymanagementinteractionses", parentInteractionsQuery);
 
-            HttpResponseMessage response = _client.GetAsync(url).Result;
-
-            string interactionsResult = response.Content.ReadAsStringAsync().Result;
-            var interactionsValue = JsonConvert.DeserializeObject<JObject>(interactionsResult);
-            List<JToken> interactionsResponse = interactionsValue["value"].ToList();
-
-            List<ParentInteraction> interactions = new List<ParentInteraction>();
+            List<Interaction> interactions = new List<Interaction>();
 
             foreach (JToken m in interactionsResponse)
             {
-                ParentInteraction interaction = new ParentInteraction()
+                Interaction interaction = new Interaction()
                 {
                     Id = m["hackney_tenancymanagementinteractionsid"]?.ToString(),
                     Name = m["hackney_name"]?.ToString(),
@@ -239,8 +161,19 @@ namespace MaTReportingAPI.V1.Gateways
                 interactions.Add(interaction);
             }
 
+            //TODO: limit homecheck to THC, use base class and different interaction types
+            List<string> interactionIDs = interactions.Select(x => x.Id).ToList();
+
+            var homeChecks = _MaTProcessAPIGateway.GetHomeCheckAnswersByInteractionIDs(interactionIDs);
+
+            foreach (KeyValuePair<string, JToken> homeCheck in homeChecks)
+            {
+                Interaction interaction = interactions.FirstOrDefault(x => x.Id == homeCheck.Key);
+                interaction.HomeCheck = homeCheck.Value?.ToString();
+            }
+
             //get child interactions
-            foreach(var parentInteraction in interactions)
+            foreach (var parentInteraction in interactions)
             {
                 string childInteractionsQuery =
                $@"
@@ -281,44 +214,11 @@ namespace MaTReportingAPI.V1.Gateways
                     </fetch>
                 ";
 
-                string cUrl = $"{CRMAPIBaseURL}/hackney_tenancymanagementinteractionses?fetchXml={childInteractionsQuery}";
+                dynamic cinteractionsResponse = _CRMGateway.GetEntitiesByFetchXMLQuery("hackney_tenancymanagementinteractionses", childInteractionsQuery);
 
-                HttpResponseMessage cresponse = _client.GetAsync(cUrl).Result;
-                string cinteractionsResult = cresponse.Content.ReadAsStringAsync().Result;
-                var cinteractionsValue = JsonConvert.DeserializeObject<JObject>(cinteractionsResult);
-                List<JToken> cinteractionsResponse = cinteractionsValue["value"].ToList();
-                
                 foreach (JToken m in cinteractionsResponse)
                 {
-                    Interaction childInteraction = new Interaction()
-                    {
-                        Id = m["hackney_tenancymanagementinteractionsid"]?.ToString(),
-                        Name = m["hackney_name"]?.ToString(),
-                        ParentInteractionId = m["_hackney_parent_interactionid_value"]?.ToString(),
-                        CreatedOn = m["createdon"]?.ToString(),
-                        Contact = m["_hackney_contactid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        NatureofEnquiry = m["hackney_natureofenquiry@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        CreatedByEstateOfficer = m["_hackney_estateofficer_createdbyid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        EnquirySubject = m["hackney_enquirysubject@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        EstateOfficerPatch = m["_hackney_estateofficerpatchid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        HandledBy = m["hackney_handleby@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        HouseholdInteraction = m["_hackney_household_interactionid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        Incident = m["_hackney_incidentid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        ManagerPatch = m["_hackney_managerpropertypatchid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        NHOAreaName = m["hackney_areaname@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        ProcessStage = m["hackney_process_stage@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        ProcessType = m["hackney_processtype@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        ReasonForStartingProcess = m["hackney_reasonforstartingprocess@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        Subject = m["_hackney_subjectid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        Transferred = m["hackney_transferred@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        UpdatedByEstateOfficer = m["_hackney_estateofficer_updatedbyid_value@OData.Community.Display.V1.FormattedValue"]?.ToString(),
-                        AddressStreet1 = m["contact1_x002e_address1_line1"]?.ToString(),
-                        AddressStreet2 = m["contact1_x002e_address1_line2"]?.ToString(),
-                        AddressStreet3 = m["contact1_x002e_address1_line3"]?.ToString(),
-                        AddressZIPPostalCode = m["contact1_x002e_address1_postalcode"]?.ToString()
-                    };
-
-                    parentInteraction.ChildInteractions.Add(childInteraction);
+                    parentInteraction.ChildInteractions.Add(CRMEntityFactory.CreateInteractionObject(m));
                 }
             }
 

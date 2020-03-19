@@ -1,7 +1,10 @@
+using System.Collections.Generic;
+
 namespace MaTReportingAPI.V1.Domain
 {
     public class Interaction
     {
+        public List<Interaction> ChildInteractions { get; set; } = new List<Interaction>();
         public string Id { get; set; }
         public string ParentInteractionId { get; set; }
         public string Name { get; set; }
