@@ -20,5 +20,5 @@ services:
       - mongo-db
   mongo-db:
     image: mongo:3.6
-      ports:
+    ports:
       - 1433:27017
