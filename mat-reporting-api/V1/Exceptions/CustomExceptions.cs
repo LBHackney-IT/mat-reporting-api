@@ -1,6 +1,6 @@
 using System;
 
-namespace MaTReportingAPI.V1.CustomExceptions
+namespace MaTReportingAPI.V1.Exceptions
 {
     //base class to make it easier to handle custom exceptions at controller level
     public class MaTReportingApiBaseException : Exception

@@ -20,6 +20,7 @@ using FluentValidation.AspNetCore;
 using FluentValidation;
 using MaTReportingAPI.V1.Validators;
 using System.Net.Http.Headers;
+using MaTReportingAPI.V1.Infrastructure;
 
 namespace MaTReportingAPI
 {
@@ -108,7 +109,8 @@ namespace MaTReportingAPI
                 if (File.Exists(xmlPath))
                     c.IncludeXmlComments(xmlPath);
             });
-            
+
+            ConfigureDbContext(services);
             RegisterGateWays(services);
             RegisterUseCases(services);
 
@@ -143,6 +145,7 @@ namespace MaTReportingAPI
             services.AddSingleton<ICRMGateway, CRMGateway>();
             services.AddSingleton<IETRAMeetingsGateway, ETRAMeetingsGateway>();
             services.AddSingleton<IInteractionsGateway, InteractionsGateway>();
+            services.AddSingleton<IProcessDataGateway, ProcessDataGateway>();
         }
 
         private static void RegisterUseCases(IServiceCollection services)
@@ -151,7 +154,22 @@ namespace MaTReportingAPI
             services.AddSingleton<IListInteractions, ListInteractionsUseCase>();
             services.AddSingleton<IListInteractionsAndChildInteractions, ListInteractionsAndChildInteractionsUseCase>();
         }
-               
+
+        private static void ConfigureDbContext(IServiceCollection services)
+        {
+            services.Configure<ConnectionSettings>(options =>
+            {
+                options.ConnectionString
+                    = Environment.GetEnvironmentVariable("DocumentDbConnString");
+                options.Database
+                    = Environment.GetEnvironmentVariable("DatabaseName");
+                options.CollectionName
+                    = Environment.GetEnvironmentVariable("CollectionName");
+            });
+
+            services.AddSingleton<IProcessDbContext, ProcessDbContext>();
+        }
+
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {

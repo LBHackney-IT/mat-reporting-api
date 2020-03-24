@@ -1,4 +1,4 @@
-using MaTReportingAPI.V1.CustomExceptions;
+using MaTReportingAPI.V1.Exceptions;
 using Newtonsoft.Json;
 using System.Net.Http;
 
@@ -22,6 +22,7 @@ namespace MaTReportingAPI.V1.Gateways
             if (!_httpClient.DefaultRequestHeaders.Contains("Authorization"))
             {
                 string accessToken = _CRMTokenGateway.GetCRMAccessToken();
+
                 _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken);
             }
 
