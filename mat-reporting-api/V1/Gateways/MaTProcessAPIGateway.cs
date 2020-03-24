@@ -1,4 +1,4 @@
-using MaTReportingAPI.V1.CustomExceptions;
+using MaTReportingAPI.V1.Exceptions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;

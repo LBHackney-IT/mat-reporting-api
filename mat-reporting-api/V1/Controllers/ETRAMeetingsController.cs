@@ -1,5 +1,5 @@
 using MaTReportingAPI.V1.Boundary;
-using MaTReportingAPI.V1.CustomExceptions;
+using MaTReportingAPI.V1.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;

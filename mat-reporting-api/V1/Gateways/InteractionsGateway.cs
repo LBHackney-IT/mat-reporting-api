@@ -10,11 +10,13 @@ namespace MaTReportingAPI.V1.Gateways
     {
         private readonly ICRMGateway _CRMGateway;
         private readonly IMaTProcessAPIGateway _MaTProcessAPIGateway;
+        private readonly IProcessDataGateway _processDataGateway;
 
-        public InteractionsGateway(ICRMGateway CRMGateway, IMaTProcessAPIGateway MaTProcessAPI)
+        public InteractionsGateway(ICRMGateway CRMGateway, IMaTProcessAPIGateway MaTProcessAPI, IProcessDataGateway processDataGateway)
         {
             _CRMGateway = CRMGateway;
             _MaTProcessAPIGateway = MaTProcessAPI;
+            _processDataGateway = processDataGateway;
         }
 
         public List<Interaction> GetInteractionsByDateRange(string fromDate, string toDate)
@@ -69,13 +71,36 @@ namespace MaTReportingAPI.V1.Gateways
             }
 
             List<string> interactionIDs = interactions.Select(x => x.Id).ToList();
-
+           
+            //get home check data for processes created using Angular UI
             var homeChecks = _MaTProcessAPIGateway.GetHomeCheckAnswersByInteractionIDs(interactionIDs);
 
-            foreach(KeyValuePair<string, JToken> homeCheck in homeChecks)
+            foreach (KeyValuePair<string, JToken> homeCheck in homeChecks)
             {
                 Interaction interaction = interactions.FirstOrDefault(x => x.Id == homeCheck.Key);
-                if(interaction != null) interaction.HomeCheck = homeCheck.Value?.ToString();
+                if (interaction != null) interaction.HomeCheck = homeCheck.Value?.ToString();
+            }
+
+            //get home check data for processes created using replatformed React UI
+            List<MatProcessData> replatformedHomeChecks = new List<MatProcessData>();
+
+            if (interactionIDs.Count > 0)
+            {
+                replatformedHomeChecks = _processDataGateway.GetProcessDataByIDs(interactionIDs.ToArray());
+
+                //if the process wasn't created using Angular, the API call _MaTProcessAPIGateway.GetHomeCheckAnswersByInteractionIDs above would have returned "no" for that process ID.
+                //This will override those values since they exist in the new process database
+                foreach (var homeCheck in replatformedHomeChecks)
+                {
+                    Interaction interaction = interactions.FirstOrDefault(x => x.Id == homeCheck.Id);
+                    if (interaction != null)
+                    {
+                        var processData = ((dynamic)homeCheck.ProcessData);
+
+                        //ensure we have process data, stub records won't have it
+                        if (processData != null) interaction.HomeCheck = processData.homeCheck.value;
+                    }
+                }
             }
 
             return interactions;
