@@ -16,6 +16,7 @@ FROM microsoft/dotnet:2.2.0-aspnetcore-runtime-alpine
 # Copy over the compiled application from the build image
 WORKDIR /app
 COPY --from=builder /app/out .
+COPY ./rds-ca-2019-root.pem /ssl/rds-ca-2019-root.pem
 
 EXPOSE ${PORT:-3000}
 CMD ASPNETCORE_URLS=http://+:${PORT:-3000} dotnet ./MaTReportingAPI.dll
