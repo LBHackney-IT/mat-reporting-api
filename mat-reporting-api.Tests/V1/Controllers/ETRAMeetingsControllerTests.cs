@@ -1,6 +1,6 @@
 using MaTReportingAPI.Controllers.V1;
 using MaTReportingAPI.V1.Boundary;
-using MaTReportingAPI.V1.CustomExceptions;
+using MaTReportingAPI.V1.Exceptions;
 using MaTReportingAPI.V1.Domain;
 using MaTReportingAPI.V1.Validators;
 using Microsoft.AspNetCore.Mvc;

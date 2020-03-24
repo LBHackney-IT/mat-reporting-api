@@ -1,5 +1,9 @@
 using MaTReportingAPI.V1.Domain;
 using MaTReportingAPI.V1.Gateways;
+using MaTReportingAPI.V1.Infrastructure;
+using Microsoft.Extensions.Options;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using Moq;
 using Moq.Protected;
 using System;
@@ -15,16 +19,17 @@ namespace MaTReportingAPI.Tests.V1.Gateways
 {
     public class ListInteractionsGatewayTests
     {
-        private readonly InteractionsGateway _interactionsGateway;
-        private readonly CRMTokenGateway _mockCRMTokenGateway;
-        private readonly CRMGateway _mockCRMGateway;
-        private readonly MaTProcessAPIGateway _mockProcessApiGateway;
+        private Mock<IOptions<ConnectionSettings>> mockOptions;
+        private readonly Mock<CRMTokenGateway> mockCRMTokenGateway;
+        private readonly Mock<ProcessDataGateway> mockProcessDataGateway;
+        protected IMongoCollection<BsonDocument> collection;
+        protected IMongoDatabase mongoDatabase;
+        private Mock<IProcessDbContext> mockContext;
 
         private Uri mockBaseUri = new Uri("http://mockBase");
 
         public ListInteractionsGatewayTests()
         {
-            //common fake token to be used in all tests
             var mockHttpMessageHandlerCRMTokenGateway = new Mock<HttpMessageHandler>(MockBehavior.Strict);
 
             mockHttpMessageHandlerCRMTokenGateway.Protected()
@@ -44,10 +49,31 @@ namespace MaTReportingAPI.Tests.V1.Gateways
                 BaseAddress = mockBaseUri
             };
 
-            _mockCRMTokenGateway = new CRMTokenGateway(crmClient);
+            mockCRMTokenGateway = new Mock<CRMTokenGateway>(crmClient);
 
-            //mock CRM
-            _interactionsGateway = new InteractionsGateway(_mockCRMGateway, _mockProcessApiGateway);
+            //TODO: Mock collection
+            mockOptions = new Mock<IOptions<ConnectionSettings>>();
+
+            string MONGO_CONN_STRING = Environment.GetEnvironmentVariable("MONGO_CONN_STRING") ??
+                              @"mongodb://localhost:1433/";
+
+            var settings = new ConnectionSettings
+            {
+                ConnectionString = MONGO_CONN_STRING,
+                CollectionName = "process-data",
+                Database = "mat-processes"
+            };
+
+            mockOptions.SetupGet(x => x.Value).Returns(settings);
+
+            MongoClient mongoClient = new MongoClient(new MongoUrl(MONGO_CONN_STRING));
+            mongoDatabase = mongoClient.GetDatabase("mat-processes");
+            collection = mongoDatabase.GetCollection<BsonDocument>("process-data");
+
+            mockContext = new Mock<IProcessDbContext>();
+            mockContext.Setup(x => x.getCollection()).Returns(collection);
+
+            mockProcessDataGateway = new Mock<ProcessDataGateway>(mockContext.Object);
         }
 
         [Fact]
@@ -72,7 +98,7 @@ namespace MaTReportingAPI.Tests.V1.Gateways
             }).Verifiable();
 
             HttpClient client = new HttpClient(httpMessageHandlerMock.Object) { BaseAddress = mockBaseUri };
-            CRMGateway _mockCRMGateway = new CRMGateway(_mockCRMTokenGateway, client);
+            Mock<CRMGateway> _mockCRMGateway = new Mock<CRMGateway>(mockCRMTokenGateway.Object, client);
 
             //mock HttpMessageHandler for MaTAPIGAteway
             var httpMessageHandlerMockMaTAPI = new Mock<HttpMessageHandler>(MockBehavior.Strict);
@@ -93,10 +119,10 @@ namespace MaTReportingAPI.Tests.V1.Gateways
             }).Verifiable();
 
             HttpClient _matAPIClient = new HttpClient(httpMessageHandlerMockMaTAPI.Object) { BaseAddress = mockBaseUri };
-            MaTProcessAPIGateway _mockMaTAPIGateway = new MaTProcessAPIGateway(_matAPIClient);
+            Mock<MaTProcessAPIGateway> _mockMaTAPIGateway = new Mock<MaTProcessAPIGateway>(_matAPIClient);
 
-            //inject mock clients to gateway
-            InteractionsGateway interactionsGateway = new InteractionsGateway(_mockCRMGateway, _mockMaTAPIGateway);
+            //inject mocks to gateway
+            InteractionsGateway interactionsGateway = new InteractionsGateway(_mockCRMGateway.Object, _mockMaTAPIGateway.Object, mockProcessDataGateway.Object);
 
             //Act
             var response = interactionsGateway.GetInteractionsByDateRange("2019-04-01", "2019-04-30");
@@ -106,8 +132,6 @@ namespace MaTReportingAPI.Tests.V1.Gateways
             Assert.IsType<List<Interaction>>(response);
             Assert.NotNull(response.FirstOrDefault());
             Assert.True(response.Count > 0);
-            //Assert.Equal(expectedMeetingName, response.FirstOrDefault().Name);
-            //Assert.Equal(expectedNumberOfActions, response.FirstOrDefault().NoOfActions);
         }
     }
 }

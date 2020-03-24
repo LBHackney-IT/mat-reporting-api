@@ -1,4 +1,4 @@
-using MaTReportingAPI.V1.CustomExceptions;
+using MaTReportingAPI.V1.Exceptions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
@@ -14,7 +14,6 @@ namespace MaTReportingAPI.V1.Gateways
             _httpClient = httpClient;
         }
 
-        //TODO: throw token exception
         public string GetCRMAccessToken()
         {
             try

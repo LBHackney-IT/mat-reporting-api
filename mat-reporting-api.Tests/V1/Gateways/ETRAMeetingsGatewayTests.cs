@@ -15,11 +15,9 @@ namespace MaTReportingAPI.Tests.V1.Gateways
 {
     public class ETRAMeetingsGatewayTests
     {
-        private readonly CRMTokenGateway _mockCRMTokenGateway;
-        private readonly CRMGateway _mockCRMGateway;
-        private readonly ETRAMeetingsGateway _eTRAMeetingsGateway;
-
-        private Uri mockBaseUri = new Uri("http://mockBase");
+        private readonly Mock<CRMTokenGateway> mockCRMTokenGateway;
+       
+        private readonly Uri mockBaseUri = new Uri("http://mockBase");
 
         public ETRAMeetingsGatewayTests()
         {
@@ -43,16 +41,7 @@ namespace MaTReportingAPI.Tests.V1.Gateways
                 BaseAddress = mockBaseUri
             };
 
-            _mockCRMTokenGateway = new CRMTokenGateway(crmClient);
-
-            //mock CRM
-            _eTRAMeetingsGateway = new ETRAMeetingsGateway(_mockCRMGateway);
-        }
-
-        [Fact]
-        public void ListOfETRAMeetingsImplemetsBoundaryInterface()
-        {
-            Assert.True(_eTRAMeetingsGateway is IETRAMeetingsGateway);
+            mockCRMTokenGateway = new Mock<CRMTokenGateway>(crmClient);
         }
 
         [Fact]
@@ -80,10 +69,10 @@ namespace MaTReportingAPI.Tests.V1.Gateways
             }).Verifiable();
 
             HttpClient client = new HttpClient(httpMessageHandlerMock.Object) { BaseAddress = mockBaseUri };
-            CRMGateway _mockCRMGateway = new CRMGateway(_mockCRMTokenGateway, client);
+            Mock<CRMGateway> _mockCRMGateway = new Mock<CRMGateway>(mockCRMTokenGateway.Object, client);
 
-            //inject mock clients to gateway
-            ETRAMeetingsGateway eTRAMeetingsGateway = new ETRAMeetingsGateway(_mockCRMGateway);
+            //inject mocks to gateway
+            ETRAMeetingsGateway eTRAMeetingsGateway = new ETRAMeetingsGateway(_mockCRMGateway.Object);
 
             //Act
             var response = eTRAMeetingsGateway.GetETRAMeetingsByDateRange("2019-04-01", "2019-04-30");
