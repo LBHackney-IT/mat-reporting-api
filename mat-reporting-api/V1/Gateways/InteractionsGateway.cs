@@ -50,8 +50,12 @@ namespace MaTReportingAPI.V1.Gateways
                 <attribute name='hackney_contactid'/>
                 <order descending='false' attribute='hackney_name'/>
                 <filter type='and'>
-                    condition attribute='hackney_natureofenquiry' value='15' operator='eq'/>
-                    <condition attribute='hackney_enquirysubject' value='100000156' operator='eq'/>
+                    <condition attribute='hackney_natureofenquiry' value='15' operator='eq'/>
+                    <condition attribute='hackney_enquirysubject' operator='in'>
+                        <value>100000156</value>
+                        <value>100000052</value>
+                        <value>100000060</value>
+                    </condition>
                     <condition attribute='createdon' value='{fromDate}' operator='on-or-after'/>
                     <condition attribute='createdon' value='{toDate}' operator='on-or-before'/>
                 </filter>
@@ -73,8 +77,8 @@ namespace MaTReportingAPI.V1.Gateways
             {
                 interactions.Add(CRMEntityFactory.CreateInteractionObject(m));
             }
-
-            List<string> interactionIDs = interactions.Select(x => x.Id).ToList();
+            //only get Tenancy and Household Check (THC) interactions
+            List<string> interactionIDs = interactions.Where(x => x.EnquirySubject == "Tenancy and household check").Select(x => x.Id).ToList();
            
             //get home check data for processes created using Angular UI
             var homeChecks = _MaTProcessAPIGateway.GetHomeCheckAnswersByInteractionIDs(interactionIDs);
