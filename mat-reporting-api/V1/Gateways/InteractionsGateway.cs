@@ -1,6 +1,7 @@
 using MaTReportingAPI.V1.Domain;
 using MaTReportingAPI.V1.Factories;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,12 +12,15 @@ namespace MaTReportingAPI.V1.Gateways
         private readonly ICRMGateway _CRMGateway;
         private readonly IMaTProcessAPIGateway _MaTProcessAPIGateway;
         private readonly IProcessDataGateway _processDataGateway;
+        private readonly string enableDocumentDBSupport;
 
         public InteractionsGateway(ICRMGateway CRMGateway, IMaTProcessAPIGateway MaTProcessAPI, IProcessDataGateway processDataGateway)
         {
             _CRMGateway = CRMGateway;
             _MaTProcessAPIGateway = MaTProcessAPI;
             _processDataGateway = processDataGateway;
+            enableDocumentDBSupport = Environment.GetEnvironmentVariable("EnableDocumentDBSupport") != null
+                ? Environment.GetEnvironmentVariable("EnableDocumentDBSupport").ToString().ToLower() : "false";
         }
 
         public List<Interaction> GetInteractionsByDateRange(string fromDate, string toDate)
@@ -81,24 +85,28 @@ namespace MaTReportingAPI.V1.Gateways
                 if (interaction != null) interaction.HomeCheck = homeCheck.Value?.ToString();
             }
 
-            //get home check data for processes created using replatformed React UI
-            List<MatProcessData> replatformedHomeChecks = new List<MatProcessData>();
-
-            if (interactionIDs.Count > 0)
+            //check if we need to fetch data for replatformed THC process as well
+            if (enableDocumentDBSupport == "true")
             {
-                replatformedHomeChecks = _processDataGateway.GetProcessDataByIDs(interactionIDs.ToArray());
+                //get home check data for processes created using replatformed React UI
+                List<MatProcessData> replatformedHomeChecks = new List<MatProcessData>();
 
-                //if the process wasn't created using Angular, the API call _MaTProcessAPIGateway.GetHomeCheckAnswersByInteractionIDs above would have returned "no" for that process ID.
-                //This will override those values since they exist in the new process database
-                foreach (var homeCheck in replatformedHomeChecks)
+                if (interactionIDs.Count > 0)
                 {
-                    Interaction interaction = interactions.FirstOrDefault(x => x.Id == homeCheck.Id);
-                    if (interaction != null)
-                    {
-                        var processData = ((dynamic)homeCheck.ProcessData);
+                    replatformedHomeChecks = _processDataGateway.GetProcessDataByIDs(interactionIDs.ToArray());
 
-                        //ensure we have process data, stub records won't have it
-                        if (processData != null) interaction.HomeCheck = processData.homeCheck.value;
+                    //if the process wasn't created using Angular, the API call _MaTProcessAPIGateway.GetHomeCheckAnswersByInteractionIDs above would have returned "no" for that process ID.
+                    //This will override those values since they exist in the new process database
+                    foreach (var homeCheck in replatformedHomeChecks)
+                    {
+                        Interaction interaction = interactions.FirstOrDefault(x => x.Id == homeCheck.Id);
+                        if (interaction != null)
+                        {
+                            var processData = ((dynamic)homeCheck.ProcessData);
+
+                            //ensure we have process data, stub records won't have it
+                            if (processData != null) interaction.HomeCheck = processData.homeCheck.value;
+                        }
                     }
                 }
             }
