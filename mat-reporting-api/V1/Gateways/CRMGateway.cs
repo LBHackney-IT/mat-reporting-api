@@ -1,4 +1,5 @@
 using MaTReportingAPI.V1.Exceptions;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System.Net.Http;
 
@@ -17,24 +18,39 @@ namespace MaTReportingAPI.V1.Gateways
 
         public dynamic GetEntitiesByFetchXMLQuery(string entityType, string query)
         {
-            //same HttpClient from http client factory will be used so check if the Authorization header has been set already
-            //will throw custom exception on failure, let it bubble up to controller
+            //make sure Authorization header has been set
             if (!_httpClient.DefaultRequestHeaders.Contains("Authorization"))
             {
-                string accessToken = _CRMTokenGateway.GetCRMAccessToken();
-
-                _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + accessToken);
+                _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + _CRMTokenGateway.GetCRMAccessToken());
             }
-
+            
             try
             {
                 string queryURL = $"/api/data/v8.2/{entityType}?fetchXml={query}";
-
+               
                 HttpResponseMessage httpResponseMessage = _httpClient.GetAsync(queryURL).Result;
 
-                string result = httpResponseMessage.Content.ReadAsStringAsync().Result;
+                //Deal with Unauthorized response, typically caused by expired token. Try again with updated token
+                //faster and safer than manually checking whether current token has expired
+                if((int)httpResponseMessage.StatusCode == StatusCodes.Status401Unauthorized)
+                {
+                    _httpClient.DefaultRequestHeaders.Remove("Authorization");
+                    _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + _CRMTokenGateway.GetCRMAccessToken());
 
-                return JsonConvert.DeserializeObject<dynamic>(result).value;
+                    httpResponseMessage = _httpClient.GetAsync(queryURL).Result;
+                }
+
+                if((int)httpResponseMessage.StatusCode == StatusCodes.Status200OK)
+                {
+                    string result = httpResponseMessage.Content.ReadAsStringAsync().Result;
+
+                    return JsonConvert.DeserializeObject<dynamic>(result).value;
+                }
+                //could't recover from unauthorized error, or something else went wrong
+                else
+                {
+                    throw new CRMException("Unable to fetch data from CRM");
+                }
             }
             catch
             {
