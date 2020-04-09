@@ -22,6 +22,7 @@ namespace MaTReportingAPI.Tests.V1.Gateways
         private Mock<IOptions<ConnectionSettings>> mockOptions;
         private readonly Mock<CRMTokenGateway> mockCRMTokenGateway;
         private readonly Mock<ProcessDataGateway> mockProcessDataGateway;
+        private readonly Mock<MaTProcessDataGateway> mockMaTProcessDataGateway;
         protected IMongoCollection<BsonDocument> collection;
         protected IMongoDatabase mongoDatabase;
         private Mock<IProcessDbContext> mockContext;
@@ -74,6 +75,8 @@ namespace MaTReportingAPI.Tests.V1.Gateways
             mockContext.Setup(x => x.getCollection()).Returns(collection);
 
             mockProcessDataGateway = new Mock<ProcessDataGateway>(mockContext.Object);
+
+            mockMaTProcessDataGateway = new Mock<MaTProcessDataGateway>();
         }
 
         [Fact]
@@ -122,7 +125,7 @@ namespace MaTReportingAPI.Tests.V1.Gateways
             Mock<MaTProcessAPIGateway> _mockMaTAPIGateway = new Mock<MaTProcessAPIGateway>(_matAPIClient);
 
             //inject mocks to gateway
-            InteractionsGateway interactionsGateway = new InteractionsGateway(_mockCRMGateway.Object, _mockMaTAPIGateway.Object, mockProcessDataGateway.Object);
+            InteractionsGateway interactionsGateway = new InteractionsGateway(_mockCRMGateway.Object, _mockMaTAPIGateway.Object, mockProcessDataGateway.Object, mockMaTProcessDataGateway.Object);
 
             //Act
             var response = interactionsGateway.GetInteractionsByDateRange("2019-04-01", "2019-04-30");

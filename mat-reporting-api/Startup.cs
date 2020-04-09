@@ -146,6 +146,7 @@ namespace MaTReportingAPI
             services.AddSingleton<IETRAMeetingsGateway, ETRAMeetingsGateway>();
             services.AddSingleton<IInteractionsGateway, InteractionsGateway>();
             services.AddSingleton<IProcessDataGateway, ProcessDataGateway>();
+            services.AddSingleton<IMaTProcessDataGateway, MaTProcessDataGateway>();
         }
 
         private static void RegisterUseCases(IServiceCollection services)

@@ -56,9 +56,6 @@ namespace MaTReportingAPI.Tests.V1.Infrastructure
             Assert.Equal(processData.Id, resultDeserialized.Id);
             Assert.Equal(processData.ProcessType.value, resultDeserialized.ProcessType.value);
             Assert.Equal(processData.ProcessType.name, resultDeserialized.ProcessType.name);
-            Assert.Equal(processData.DateCreated, resultDeserialized.DateCreated);
-            Assert.Equal(processData.DateLastModified, resultDeserialized.DateLastModified);
-            Assert.Equal(processData.DateCompleted, resultDeserialized.DateCompleted);
             Assert.Equal(processData.ProcessDataAvailable, resultDeserialized.ProcessDataAvailable);
             Assert.Equal(processData.ProcessDataSchemaVersion, resultDeserialized.ProcessDataSchemaVersion);
             Assert.Equal(processData.ProcessStage, resultDeserialized.ProcessStage);
