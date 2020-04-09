@@ -11,14 +11,16 @@ namespace MaTReportingAPI.V1.Gateways
     {
         private readonly ICRMGateway _CRMGateway;
         private readonly IMaTProcessAPIGateway _MaTProcessAPIGateway;
+        private readonly IMaTProcessDataGateway _MaTProcessDataGateway;
         private readonly IProcessDataGateway _processDataGateway;
         private readonly string enableDocumentDBSupport;
 
-        public InteractionsGateway(ICRMGateway CRMGateway, IMaTProcessAPIGateway MaTProcessAPI, IProcessDataGateway processDataGateway)
+        public InteractionsGateway(ICRMGateway CRMGateway, IMaTProcessAPIGateway MaTProcessAPI, IProcessDataGateway processDataGateway, IMaTProcessDataGateway maTProcessDataGateway)
         {
             _CRMGateway = CRMGateway;
             _MaTProcessAPIGateway = MaTProcessAPI;
             _processDataGateway = processDataGateway;
+            _MaTProcessDataGateway = maTProcessDataGateway;
             enableDocumentDBSupport = Environment.GetEnvironmentVariable("EnableDocumentDBSupport") != null
                 ? Environment.GetEnvironmentVariable("EnableDocumentDBSupport").ToString().ToLower() : "false";
         }
@@ -79,14 +81,14 @@ namespace MaTReportingAPI.V1.Gateways
             }
             //only get Tenancy and Household Check (THC) interactions
             List<string> interactionIDs = interactions.Where(x => x.EnquirySubject == "Tenancy and household check").Select(x => x.Id).ToList();
-           
+
             //get home check data for processes created using Angular UI
-            var homeChecks = _MaTProcessAPIGateway.GetHomeCheckAnswersByInteractionIDs(interactionIDs);
+            var homeChecks = _MaTProcessDataGateway.GetHomeCheckAnswersByInteractionIDs(interactionIDs);
 
             foreach (KeyValuePair<string, JToken> homeCheck in homeChecks)
             {
                 Interaction interaction = interactions.FirstOrDefault(x => x.Id == homeCheck.Key);
-                if (interaction != null) interaction.HomeCheck = homeCheck.Value?.ToString();
+                interaction.HomeCheck = interaction != null ? homeCheck.Value?.ToString() : null;
             }
 
             //check if we need to fetch data for replatformed THC process as well

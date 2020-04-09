@@ -41,9 +41,6 @@ namespace MaTReportingAPI.Tests.Factories
             Assert.Equal(matProcessData.Id, processDataFromFactory.Id);
             Assert.Equal(matProcessData.ProcessType.value, processDataFromFactory.ProcessType.value);
             Assert.Equal(matProcessData.ProcessType.name, processDataFromFactory.ProcessType.name);
-            Assert.Equal(matProcessData.DateCreated, processDataFromFactory.DateCreated);
-            Assert.Equal(matProcessData.DateLastModified, processDataFromFactory.DateLastModified);
-            Assert.Equal(matProcessData.DateCompleted, processDataFromFactory.DateCompleted);
             Assert.Equal(matProcessData.ProcessDataAvailable, processDataFromFactory.ProcessDataAvailable);
             Assert.Equal(matProcessData.ProcessDataSchemaVersion, processDataFromFactory.ProcessDataSchemaVersion);
             Assert.Equal(matProcessData.ProcessStage, processDataFromFactory.ProcessStage);
