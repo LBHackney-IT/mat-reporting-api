@@ -27,4 +27,10 @@ namespace MaTReportingAPI.V1.Exceptions
         public CRMException() { }
         public CRMException(string message) : base(message) { }
     }
+
+    public class MaTProcessDbException : MaTReportingApiBaseException
+    {
+        public MaTProcessDbException() { }
+        public MaTProcessDbException(string message) : base(message) { }
+    }
 }
