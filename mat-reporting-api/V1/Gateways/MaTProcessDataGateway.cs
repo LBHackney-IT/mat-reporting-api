@@ -23,15 +23,8 @@ namespace MaTReportingAPI.V1.Gateways
 
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    try
-                    {
-                        if (connection.State != ConnectionState.Open) connection.Open();
-                    }
-                    catch(Exception ex)
-                    {
-                        throw new MaTProcessDbException($"Unable to open connection to MaT Process database: {ex.Message}");
-                    }
-
+                    if (connection.State != ConnectionState.Open) connection.Open();
+                   
                     queryResults = connection.Query<Guid>(
                         "SELECT [OutSystemsSession].[TenencyManagementProcessId]" +
                         "FROM [SchemaData]" +
@@ -46,9 +39,9 @@ namespace MaTReportingAPI.V1.Gateways
                     results.Add(e, queryResults.Contains(new Guid(e)) ? "Yes" : "no");
                 }
             }
-            catch(Exception ex)
+            catch
             {
-                throw new MaTProcessDbException($"Unable to get home check details from MaT Process database {ex.Message}");
+                throw new MaTProcessDbException($"Unable to get home check details from MaT Process database");
             }
 
             return JObject.FromObject(results);

@@ -10,9 +10,6 @@ RUN dotnet restore
 COPY . ./
 RUN dotnet publish -c Release -o out
 
-# Use a smaller image
-#FROM microsoft/dotnet:2.2.0-aspnetcore-runtime-alpine
-
 # Copy over the compiled application from the build image
 WORKDIR /app
 COPY --from=builder /app/out .
