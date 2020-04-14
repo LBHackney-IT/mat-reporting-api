@@ -23,7 +23,14 @@ namespace MaTReportingAPI.V1.Gateways
 
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    if (connection.State != ConnectionState.Open) connection.Open();
+                    try
+                    {
+                        if (connection.State != ConnectionState.Open) connection.Open();
+                    }
+                    catch(Exception ex)
+                    {
+                        throw new MaTProcessDbException($"Unable to open connection to MaT Process database: {ex.Message}");
+                    }
 
                     queryResults = connection.Query<Guid>(
                         "SELECT [OutSystemsSession].[TenencyManagementProcessId]" +
