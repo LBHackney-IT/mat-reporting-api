@@ -36,9 +36,9 @@ namespace MaTReportingAPI.V1.Gateways
                     results.Add(e, queryResults.Contains(new Guid(e)) ? "Yes" : "no");
                 }
             }
-            catch
+            catch(Exception ex)
             {
-                throw new MaTProcessDbException("Unable to get home check details from MaT Process database");
+                throw new MaTProcessDbException($"Unable to get home check details from MaT Process database {ex.Message}");
             }
 
             return JObject.FromObject(results);
