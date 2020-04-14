@@ -3,6 +3,7 @@ using MaTReportingAPI.V1.Exceptions;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 
@@ -22,6 +23,8 @@ namespace MaTReportingAPI.V1.Gateways
 
                 using (SqlConnection connection = new SqlConnection(connectionString))
                 {
+                    if (connection.State != ConnectionState.Open) connection.Open();
+
                     queryResults = connection.Query<Guid>(
                         "SELECT [OutSystemsSession].[TenencyManagementProcessId]" +
                         "FROM [SchemaData]" +
