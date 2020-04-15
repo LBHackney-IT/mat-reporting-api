@@ -78,7 +78,7 @@ jobs:
       - deploy-env:
           cluster-name: "$PRODUCTION_CLUSTER"
           service-name: 'mat-reporting-api-production'
-          image-tag: "$AWS_ECR_HOST/$AWS_ECR_PATH:$CIRCLE_SHA1"
+          image-tag: "$CIRCLE_SHA1"
 
 workflows:
   build-and-deploy:
